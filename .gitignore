@@ -1,0 +1,25 @@
+# dependencies
+node_modules/
+
+# build and test output
+dist/
+coverage/
+*.tsbuildinfo
+
+# local configuration
+.env
+.env.*
+!.env.example
+!.env.test.example
+
+# logs
+*.log
+npm-debug.log*
+
+# editor and operating-system files
+.DS_Store
+.idea/
+.vscode/
+
+# MikroORM
+temp/
