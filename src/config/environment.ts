@@ -9,6 +9,9 @@ export interface DatabaseEnvironment {
   sslRejectUnauthorized: boolean;
 }
 
+export type DatabaseUrlKey =
+  'DATABASE_URL' | 'MIGRATION_DATABASE_URL' | 'PROVISIONING_DATABASE_URL';
+
 const BOOLEAN_VALUES = new Map<string, boolean>([
   ['false', false],
   ['true', true],
@@ -68,6 +71,24 @@ function positiveInteger(
   return value;
 }
 
+function optionalString(
+  source: Record<string, unknown>,
+  key: string,
+  fallback: string,
+): string {
+  const raw = source[key];
+
+  if (raw === undefined) {
+    return fallback;
+  }
+
+  if (typeof raw !== 'string' || raw.trim() === '') {
+    throw new Error(`${key} must be a non-empty string`);
+  }
+
+  return raw;
+}
+
 export function validateEnvironment(
   source: Record<string, unknown>,
 ): Record<string, unknown> {
@@ -85,10 +106,35 @@ export function validateEnvironment(
 
   const poolMin = positiveInteger(source, 'DATABASE_POOL_MIN', 1);
   const poolMax = positiveInteger(source, 'DATABASE_POOL_MAX', 10);
+  const sessionTtlSeconds = positiveInteger(
+    source,
+    'AUTH_SESSION_TTL_SECONDS',
+    604_800,
+  );
+  const sessionCookieSecure = booleanValue(
+    source,
+    'AUTH_SESSION_COOKIE_SECURE',
+    source.NODE_ENV === 'production',
+  );
+  const sessionCookieName = optionalString(
+    source,
+    'AUTH_SESSION_COOKIE_NAME',
+    'lodgekeeper_session',
+  );
 
   if (poolMax === 0 || poolMin > poolMax) {
     throw new Error(
       'DATABASE_POOL_MAX must be positive and no smaller than DATABASE_POOL_MIN',
+    );
+  }
+
+  if (sessionTtlSeconds === 0) {
+    throw new Error('AUTH_SESSION_TTL_SECONDS must be positive');
+  }
+
+  if (sessionCookieName.startsWith('__Host-') && !sessionCookieSecure) {
+    throw new Error(
+      'AUTH_SESSION_COOKIE_SECURE must be true for a __Host- cookie',
     );
   }
 
@@ -103,6 +149,9 @@ export function validateEnvironment(
       'DATABASE_SSL_REJECT_UNAUTHORIZED',
       true,
     ),
+    AUTH_SESSION_COOKIE_NAME: sessionCookieName,
+    AUTH_SESSION_COOKIE_SECURE: sessionCookieSecure,
+    AUTH_SESSION_TTL_SECONDS: sessionTtlSeconds,
   };
 }
 
@@ -123,7 +172,7 @@ export function databaseEnvironment(
 
 export function databaseEnvironmentFromProcess(
   source: NodeJS.ProcessEnv,
-  urlKey: 'DATABASE_URL' | 'MIGRATION_DATABASE_URL',
+  urlKey: DatabaseUrlKey,
 ): DatabaseEnvironment {
   const values = validateEnvironment({
     ...source,

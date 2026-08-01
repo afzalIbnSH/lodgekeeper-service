@@ -17,6 +17,7 @@ import { Tenant } from '../src/accommodation/entities/tenant.entity';
 import { DatabaseEnvironment } from '../src/config/environment';
 import { createMikroOrmOptions } from '../src/database/mikro-orm.options';
 import { TenantTransaction } from '../src/database/tenant-transaction';
+import { resetTestDatabase } from './reset-test-database';
 import { assertSafeTestDatabaseUrls } from './test-database-safety';
 
 dotenv.config({ path: '.env.test', quiet: true });
@@ -95,6 +96,7 @@ void describe('accommodation database', () => {
       ),
     );
 
+    await resetTestDatabase(migrationOrm, TEST_MIGRATION_DATABASE_URL);
     await migrationOrm.migrator.up();
     await migrationOrm.close(true);
 

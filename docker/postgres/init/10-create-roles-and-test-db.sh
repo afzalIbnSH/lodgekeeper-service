@@ -8,6 +8,7 @@ set -Eeuo pipefail
 : "${POSTGRES_DB:?POSTGRES_DB must be set}"
 : "${POSTGRES_TEST_DB:?POSTGRES_TEST_DB must be set}"
 : "${POSTGRES_USER:?POSTGRES_USER must be set}"
+: "${PROVISIONER_DB_PASSWORD:?PROVISIONER_DB_PASSWORD must be set}"
 
 psql \
   --username "$POSTGRES_USER" \
@@ -17,6 +18,8 @@ psql \
   --set=migration_user="$MIGRATION_DB_USER" \
   --set=migration_password="$MIGRATION_DB_PASSWORD" \
   --set=runtime_group="lodgekeeper_runtime" \
+  --set=provisioner_password="$PROVISIONER_DB_PASSWORD" \
+  --set=provisioner_user="lodgekeeper_provisioner" \
   --set=main_database="$POSTGRES_DB" \
   --set=test_database="$POSTGRES_TEST_DB" <<'SQL'
 select format(
@@ -46,6 +49,16 @@ select format(
 )
 where not exists (
   select from pg_roles where rolname = :'migration_user'
+)
+\gexec
+
+select format(
+  'create role %I login password %L noinherit nosuperuser nocreatedb nocreaterole noreplication nobypassrls',
+  :'provisioner_user',
+  :'provisioner_password'
+)
+where not exists (
+  select from pg_roles where rolname = :'provisioner_user'
 )
 \gexec
 

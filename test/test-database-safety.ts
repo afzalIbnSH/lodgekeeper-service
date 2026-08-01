@@ -37,17 +37,25 @@ function databaseTarget(variableName: string, value: string): DatabaseTarget {
 export function assertSafeTestDatabaseUrls(
   applicationUrl: string,
   migrationUrl: string,
+  provisioningUrl?: string,
 ): void {
   const application = databaseTarget('DATABASE_URL', applicationUrl);
   const migration = databaseTarget('MIGRATION_DATABASE_URL', migrationUrl);
+  const provisioning = provisioningUrl
+    ? databaseTarget('PROVISIONING_DATABASE_URL', provisioningUrl)
+    : undefined;
 
   if (
     application.hostname !== migration.hostname ||
     application.port !== migration.port ||
-    application.databaseName !== migration.databaseName
+    application.databaseName !== migration.databaseName ||
+    (provisioning !== undefined &&
+      (application.hostname !== provisioning.hostname ||
+        application.port !== provisioning.port ||
+        application.databaseName !== provisioning.databaseName))
   ) {
     throw new Error(
-      'DATABASE_URL and MIGRATION_DATABASE_URL must target the same test database host, port and name',
+      'Application, migration and provisioning URLs must target the same test database host, port and name',
     );
   }
 }
