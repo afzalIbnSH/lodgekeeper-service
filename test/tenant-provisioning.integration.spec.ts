@@ -135,6 +135,18 @@ void describe('tenant provisioning and account activation', () => {
       timezone: 'Asia/Kolkata',
     });
 
+    const blankDisplayName = await fetch(`${baseUrl}/auth/invitations/accept`, {
+      body: JSON.stringify({
+        displayName: '   ',
+        password,
+        tenantId: result.tenantId,
+        token: result.invitationToken,
+      }),
+      headers: { 'content-type': 'application/json' },
+      method: 'POST',
+    });
+    assert.equal(blankDisplayName.status, 400);
+
     const acceptance = await fetch(`${baseUrl}/auth/invitations/accept`, {
       body: JSON.stringify({
         displayName: 'Tenant Administrator',

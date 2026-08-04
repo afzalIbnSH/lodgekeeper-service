@@ -1,6 +1,7 @@
 import { LockMode } from '@mikro-orm/core';
 import { EntityManager } from '@mikro-orm/postgresql';
 import {
+  BadRequestException,
   Injectable,
   Inject,
   UnauthorizedException,
@@ -21,11 +22,6 @@ import { AuthenticatedPrincipal, IssuedSession } from './auth.types';
 import { PasswordHasher } from './password-hasher';
 
 const GENERIC_LOGIN_ERROR = 'Invalid email or password';
-
-interface StoredCredentials {
-  passwordHash: string;
-  principal: AuthenticatedPrincipal;
-}
 
 interface NewSession {
   entity: AuthSession;
@@ -48,6 +44,12 @@ export class AuthService {
     tenantId: string;
     token: string;
   }): Promise<IssuedSession> {
+    const displayName = input.displayName.trim();
+
+    if (!displayName) {
+      throw new BadRequestException('displayName must not be blank');
+    }
+
     const passwordHash = await this.passwordHasher.hash(input.password);
     const tokenHash = hashOpaqueToken(input.token);
     const now = new Date();
@@ -83,7 +85,7 @@ export class AuthService {
         );
       }
 
-      user.displayName = input.displayName.trim();
+      user.displayName = displayName;
       user.passwordHash = passwordHash;
       user.emailVerifiedAt = now;
       user.status = UserStatus.ACTIVE;
@@ -96,7 +98,7 @@ export class AuthService {
 
       return {
         expiresAt: session.entity.expiresAt,
-        principal: this.principal(user),
+        principal: this.activePrincipal(user),
         token: session.rawToken,
       };
     });
@@ -111,26 +113,17 @@ export class AuthService {
       email: normalizedEmail,
       status: UserStatus.ACTIVE,
     });
-    const credentials: StoredCredentials | undefined =
-      user?.passwordHash && user.displayName
-        ? {
-            passwordHash: user.passwordHash,
-            principal: this.principal(user),
-          }
-        : undefined;
 
-    if (!credentials) {
+    if (!user?.passwordHash) {
       await this.passwordHasher.consumeEquivalentWork(password);
       throw new UnauthorizedException(GENERIC_LOGIN_ERROR);
     }
 
-    if (
-      !(await this.passwordHasher.verify(password, credentials.passwordHash))
-    ) {
+    if (!(await this.passwordHasher.verify(password, user.passwordHash))) {
       throw new UnauthorizedException(GENERIC_LOGIN_ERROR);
     }
 
-    return credentials.principal;
+    return this.activePrincipal(user);
   }
 
   async createSession(
@@ -145,7 +138,7 @@ export class AuthService {
           tenant: principal.tenantId,
         });
 
-        if (!user?.displayName) {
+        if (!user) {
           throw new UnauthorizedException(GENERIC_LOGIN_ERROR);
         }
 
@@ -155,7 +148,7 @@ export class AuthService {
 
         return {
           expiresAt: session.entity.expiresAt,
-          principal: this.principal(user),
+          principal: this.activePrincipal(user),
           token: session.rawToken,
         };
       },
@@ -185,8 +178,7 @@ export class AuthService {
       if (
         !session ||
         session.expiresAt <= now ||
-        (session.user.status as UserStatus) !== UserStatus.ACTIVE ||
-        !session.user.displayName
+        (session.user.status as UserStatus) !== UserStatus.ACTIVE
       ) {
         throw new UnauthorizedException();
       }
@@ -196,7 +188,7 @@ export class AuthService {
         await transaction.flush();
       }
 
-      return this.principal(session.user);
+      return this.activePrincipal(session.user);
     });
   }
 
@@ -243,13 +235,9 @@ export class AuthService {
     return { entity: session, rawToken };
   }
 
-  private principal(user: User): AuthenticatedPrincipal {
-    if (!user.displayName) {
-      throw new Error('Active users must have a display name');
-    }
-
+  private activePrincipal(user: User): AuthenticatedPrincipal {
     return {
-      displayName: user.displayName,
+      displayName: user.displayName!,
       email: user.email,
       role: user.role,
       tenantId: user.tenant.id,
