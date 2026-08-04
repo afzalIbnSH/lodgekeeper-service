@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from 'node:crypto';
 
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+import { isUuid } from '../common/uuid';
+
 const TOKEN_SECRET_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 
 export function createOpaqueSecret(): string {
@@ -26,7 +26,7 @@ export function tenantIdFromSessionToken(token: string): string | undefined {
   const tenantId = token.slice(0, separator);
   const secret = token.slice(separator + 1);
 
-  if (!UUID_PATTERN.test(tenantId) || !TOKEN_SECRET_PATTERN.test(secret)) {
+  if (!isUuid(tenantId) || !TOKEN_SECRET_PATTERN.test(secret)) {
     return undefined;
   }
 
