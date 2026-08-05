@@ -1089,6 +1089,213 @@
       "comment": null
     },
     {
+      "name": "auth_sessions",
+      "schema": "public",
+      "columns": {
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": "now()",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "uuidv7()",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "last_seen_at": {
+          "name": "last_seen_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": "now()",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "revoked_at": {
+          "name": "revoked_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": true,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "token_hash": {
+          "name": "token_hash",
+          "type": "varchar(64)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 64,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": true,
+          "keyName": "auth_sessions_pkey",
+          "primary": true,
+          "unique": true
+        },
+        {
+          "columnNames": [
+            "tenant_id",
+            "token_hash"
+          ],
+          "composite": true,
+          "constraint": true,
+          "keyName": "auth_sessions_tenant_token_unique",
+          "primary": false,
+          "unique": true
+        },
+        {
+          "columnNames": [
+            "tenant_id",
+            "user_id",
+            "expires_at"
+          ],
+          "composite": true,
+          "constraint": false,
+          "keyName": "auth_sessions_user_expiry_lookup",
+          "primary": false,
+          "unique": false
+        }
+      ],
+      "checks": [
+        {
+          "name": "auth_sessions_expiry_valid",
+          "expression": "expires_at > created_at",
+          "definition": "check (expires_at > created_at)"
+        },
+        {
+          "name": "auth_sessions_token_hash_format",
+          "expression": "token_hash ~ '^[0-9a-f]{64}$'",
+          "definition": "check (token_hash ~ '^[0-9a-f]{64}$')"
+        }
+      ],
+      "triggers": [],
+      "foreignKeys": {
+        "auth_sessions_user_fk": {
+          "columnNames": [
+            "tenant_id",
+            "user_id"
+          ],
+          "constraintName": "auth_sessions_user_fk",
+          "localTableName": "public.auth_sessions",
+          "referencedColumnNames": [
+            "tenant_id",
+            "id"
+          ],
+          "referencedTableName": "public.users",
+          "deleteRule": "cascade"
+        }
+      },
+      "comment": null
+    },
+    {
       "name": "properties",
       "schema": "public",
       "columns": {
@@ -1726,6 +1933,498 @@
         }
       ],
       "foreignKeys": {},
+      "comment": null
+    },
+    {
+      "name": "user_invitations",
+      "schema": "public",
+      "columns": {
+        "accepted_at": {
+          "name": "accepted_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": "now()",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "uuidv7()",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": true,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "token_hash": {
+          "name": "token_hash",
+          "type": "varchar(64)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 64,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": [],
+          "composite": false,
+          "constraint": true,
+          "keyName": "user_invitations_active_user_unique",
+          "primary": false,
+          "unique": true,
+          "expression": "create unique index user_invitations_active_user_unique on user_invitations (tenant_id, user_id) where accepted_at is null"
+        },
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": true,
+          "keyName": "user_invitations_pkey",
+          "primary": true,
+          "unique": true
+        },
+        {
+          "columnNames": [
+            "tenant_id",
+            "token_hash"
+          ],
+          "composite": true,
+          "constraint": true,
+          "keyName": "user_invitations_tenant_token_unique",
+          "primary": false,
+          "unique": true
+        }
+      ],
+      "checks": [
+        {
+          "name": "user_invitations_expiry_valid",
+          "expression": "expires_at > created_at",
+          "definition": "check (expires_at > created_at)"
+        },
+        {
+          "name": "user_invitations_token_hash_format",
+          "expression": "token_hash ~ '^[0-9a-f]{64}$'",
+          "definition": "check (token_hash ~ '^[0-9a-f]{64}$')"
+        }
+      ],
+      "triggers": [],
+      "foreignKeys": {
+        "user_invitations_user_fk": {
+          "columnNames": [
+            "tenant_id",
+            "user_id"
+          ],
+          "constraintName": "user_invitations_user_fk",
+          "localTableName": "public.user_invitations",
+          "referencedColumnNames": [
+            "tenant_id",
+            "id"
+          ],
+          "referencedTableName": "public.users",
+          "deleteRule": "cascade"
+        }
+      },
+      "comment": null
+    },
+    {
+      "name": "users",
+      "schema": "public",
+      "columns": {
+        "activated_at": {
+          "name": "activated_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": "now()",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": true,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        },
+        "email_verified_at": {
+          "name": "email_verified_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": true,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "uuidv7()",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "password_hash": {
+          "name": "password_hash",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "'tenant_admin'",
+          "comment": null,
+          "collation": null,
+          "enumItems": [
+            "tenant_admin"
+          ],
+          "mappedType": "enum"
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "'invited'",
+          "comment": null,
+          "collation": null,
+          "enumItems": [
+            "invited",
+            "active",
+            "suspended"
+          ],
+          "mappedType": "enum"
+        },
+        "suspended_at": {
+          "name": "suspended_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": true,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "uuid"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": "now()",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        }
+      },
+      "indexes": [
+        {
+          "columnNames": [
+            "email"
+          ],
+          "composite": false,
+          "constraint": true,
+          "keyName": "users_email_unique",
+          "primary": false,
+          "unique": true
+        },
+        {
+          "columnNames": [
+            "id"
+          ],
+          "composite": false,
+          "constraint": true,
+          "keyName": "users_pkey",
+          "primary": true,
+          "unique": true
+        },
+        {
+          "columnNames": [
+            "tenant_id",
+            "id"
+          ],
+          "composite": true,
+          "constraint": true,
+          "keyName": "users_tenant_id_id_unique",
+          "primary": false,
+          "unique": true
+        }
+      ],
+      "checks": [
+        {
+          "name": "users_display_name_not_blank",
+          "expression": "display_name is null or btrim(display_name) <> ''",
+          "definition": "check (display_name is null or btrim(display_name) <> '')"
+        },
+        {
+          "name": "users_email_normalized",
+          "expression": "email = lower(btrim(email)) and email ~ '^[^@[:space:]]+@[^@[:space:]]+$'",
+          "definition": "check (email = lower(btrim(email)) and email ~ '^[^@[:space:]]+@[^@[:space:]]+$')"
+        },
+        {
+          "name": "users_role_check",
+          "expression": "\"role\" in ('tenant_admin')",
+          "definition": "check (\"role\" in ('tenant_admin'))",
+          "columnName": "role"
+        },
+        {
+          "name": "users_status_check",
+          "expression": "\"status\" in ('invited', 'active', 'suspended')",
+          "definition": "check (\"status\" in ('invited', 'active', 'suspended'))",
+          "columnName": "status"
+        },
+        {
+          "name": "users_status_shape_valid",
+          "expression": "\n        (\n          status = 'invited'\n          and password_hash is null\n          and activated_at is null\n          and suspended_at is null\n        )\n        or\n        (\n          status = 'active'\n          and display_name is not null\n          and password_hash is not null\n          and activated_at is not null\n          and suspended_at is null\n        )\n        or\n        (\n          status = 'suspended'\n          and display_name is not null\n          and password_hash is not null\n          and activated_at is not null\n          and suspended_at is not null\n        )\n      ",
+          "definition": "check (\n        (\n          status = 'invited'\n          and password_hash is null\n          and activated_at is null\n          and suspended_at is null\n        )\n        or\n        (\n          status = 'active'\n          and display_name is not null\n          and password_hash is not null\n          and activated_at is not null\n          and suspended_at is null\n        )\n        or\n        (\n          status = 'suspended'\n          and display_name is not null\n          and password_hash is not null\n          and activated_at is not null\n          and suspended_at is not null\n        )\n      )"
+        }
+      ],
+      "triggers": [
+        {
+          "name": "users_touch_updated_at",
+          "timing": "before",
+          "events": [
+            "update"
+          ],
+          "forEach": "row",
+          "body": "",
+          "expression": "create trigger users_touch_updated_at before update on users for each row execute function app.touch_updated_at()"
+        }
+      ],
+      "foreignKeys": {
+        "users_tenant_id_foreign": {
+          "columnNames": [
+            "tenant_id"
+          ],
+          "constraintName": "users_tenant_id_foreign",
+          "localTableName": "public.users",
+          "referencedColumnNames": [
+            "id"
+          ],
+          "referencedTableName": "public.tenants",
+          "deleteRule": "restrict"
+        }
+      },
       "comment": null
     }
   ],

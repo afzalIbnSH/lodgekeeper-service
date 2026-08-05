@@ -8,6 +8,7 @@ services:
       MIGRATION_DB_USER: ${MIGRATION_DB_USER:-lodgekeeper_owner}
       POSTGRES_DB: ${POSTGRES_DB:-lodgekeeper}
       POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD:-postgres}
+      PROVISIONER_DB_PASSWORD: ${PROVISIONER_DB_PASSWORD:-lodgekeeper_provisioner}
       POSTGRES_TEST_DB: ${POSTGRES_TEST_DB:-lodgekeeper_test}
       POSTGRES_USER: postgres
     ports:

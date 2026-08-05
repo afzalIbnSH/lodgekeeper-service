@@ -25,17 +25,16 @@ unit has a physical identity, represented by a code such as `A402`, and belongs
 to an `AccommodationUnitType` such as “Double room with AC”. Floor label,
 display name and notes are optional.
 
-The abstraction can support other indivisible rentable items without changing
-the surrounding model. The only supported `AccommodationUnitKind` at present
-is `room`, and it is the database default.
+The only supported `AccommodationUnitKind` is `room`, and it is the database
+default.
 
 Units and unit types are archived rather than reused as unrelated records.
 Active unit codes and active unit-type names are unique within a property.
 
 ## Properties
 
-A tenant may operate multiple properties. Currency and timezone are property
-attributes because they apply to the property's rates and operating times.
+A tenant may operate multiple properties. Each property defines the currency
+used by its rates and the timezone used by its operating times.
 
 Property-specific records carry both `tenant_id` and `property_id`. Composite
 foreign keys ensure that their property, policy and unit-type references remain
@@ -44,8 +43,8 @@ within the same tenant and property.
 ## Amenities
 
 Amenities are tenant-defined records associated with unit types through an
-explicit mapping table. Defining them at tenant level allows an operator to
-reuse the same amenity across properties.
+explicit mapping table. The same amenity can be associated with unit types in
+multiple properties.
 
 ## Rental policies
 

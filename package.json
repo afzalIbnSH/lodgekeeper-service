@@ -19,9 +19,11 @@
     "db:create-migration": "mikro-orm migration:create",
     "db:migrate": "mikro-orm migration:up",
     "db:migrate:down": "mikro-orm migration:down",
-    "test": "npm run test:integration",
-    "test:integration": "tsx --test test/*.integration.spec.ts",
-    "test:cov": "node --import tsx --experimental-test-coverage --test test/*.integration.spec.ts"
+    "provision:tenant": "tsx src/provisioning/provision-tenant.ts",
+    "test": "npm run test:unit && npm run test:integration",
+    "test:unit": "tsx --test test/*.unit.spec.ts",
+    "test:integration": "tsx --test --test-concurrency=1 test/*.integration.spec.ts",
+    "test:cov": "node --import tsx --experimental-test-coverage --test --test-concurrency=1 test/*.unit.spec.ts test/*.integration.spec.ts"
   },
   "mikro-orm": {
     "configPaths": [
@@ -36,15 +38,25 @@
     "@nestjs/common": "11.1.28",
     "@nestjs/config": "4.0.4",
     "@nestjs/core": "11.1.28",
+    "@nestjs/passport": "11.0.5",
     "@nestjs/platform-express": "11.1.28",
+    "class-transformer": "0.5.1",
+    "class-validator": "0.15.1",
     "dotenv": "17.4.2",
+    "nodemailer": "9.0.3",
+    "passport": "0.7.0",
+    "passport-local": "1.0.0",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@mikro-orm/cli": "7.1.7",
+    "@types/express": "5.0.6",
     "@types/node": "24.13.3",
+    "@types/nodemailer": "8.0.1",
+    "@types/passport": "1.0.17",
+    "@types/passport-local": "1.0.38",
     "eslint": "10.8.0",
     "eslint-config-prettier": "10.1.8",
     "prettier": "3.9.6",

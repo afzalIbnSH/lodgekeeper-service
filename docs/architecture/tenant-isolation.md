@@ -16,9 +16,9 @@ between rows.
 
 ## Row-level security
 
-RLS is enabled and forced on every tenant-owned table. The `tenants` policy
-compares its primary key with the current tenant; other policies compare their
-`tenant_id` column:
+RLS is enabled and forced on tenant-owned tables, with the deliberate exception
+of `users`. The `tenants` policy compares its primary key with the current
+tenant; other policies compare their `tenant_id` column:
 
 ```sql
 tenant_id = app.current_tenant_id()
@@ -32,6 +32,16 @@ The application connects through a restricted, non-owner role that cannot
 bypass RLS. Schema migrations use a separate privileged connection. See
 [Database development](../development/database.md) for role provisioning and
 connection configuration.
+
+Each user belongs directly to one tenant, but the `users` table does not use
+RLS. The runtime needs to find a user globally by a unique email address before
+it knows which tenant context to establish during login. Authenticated
+operations still use the tenant derived from that user or their session.
+Invitations and sessions carry `tenant_id` directly and use the ordinary
+tenant-isolation policy.
+
+The standalone provisioner has no `BYPASSRLS` attribute and uses a
+transaction-local tenant context to access tenant-owned rows.
 
 ## Transaction context
 

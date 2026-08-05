@@ -21,15 +21,28 @@ docker compose up --detach --wait
 
 The running application and migration tooling use separate connections:
 
-| Variable                 | Local role          | Purpose                       |
-| ------------------------ | ------------------- | ----------------------------- |
-| `DATABASE_URL`           | `lodgekeeper_app`   | Restricted application access |
-| `MIGRATION_DATABASE_URL` | `lodgekeeper_owner` | Schema migrations             |
+| Variable                    | Local role                | Purpose                          |
+| --------------------------- | ------------------------- | -------------------------------- |
+| `DATABASE_URL`              | `lodgekeeper_app`         | Restricted application access    |
+| `MIGRATION_DATABASE_URL`    | `lodgekeeper_owner`       | Schema migrations                |
+| `PROVISIONING_DATABASE_URL` | `lodgekeeper_provisioner` | Operator-run tenant provisioning |
 
 `lodgekeeper_runtime` is the non-login privilege role inherited by the
 application login. Environments applying the migrations must provision this
 role before the first migration because the SQL grants privileges to it by
-name. Example credentials are intended only for local development.
+name. The provisioner is also created outside migrations because PostgreSQL
+roles belong to the database cluster rather than to one application schema.
+It is a non-superuser login without `BYPASSRLS`, `CREATEDB` or `CREATEROLE`.
+Example credentials are intended only for local development.
+
+The container initialization script is idempotent, but PostgreSQL's entrypoint
+runs it automatically only for a new volume. After adding a role to an existing
+local volume, rerun it explicitly:
+
+```sh
+docker compose exec postgres \
+  bash /docker-entrypoint-initdb.d/10-create-roles-and-test-db.sh
+```
 
 ## Migration workflow
 
@@ -73,10 +86,13 @@ The MikroORM CLI loads `mikro-orm.config.ts`, which selects
 ## Integration tests
 
 Copy `.env.test.example` to `.env.test` when the local defaults are unsuitable.
-The test suite applies pending migrations programmatically and then connects as
-the restricted application role. As a safety check, both connection URLs must
-target the same host, port and database, and the database name must contain
-`test` as a distinct segment:
+Before each integration spec, the test suite drops and recreates the `app` and
+`public` schemas through the migration connection, then applies every migration
+and connects as the restricted application and provisioner roles. Before this
+reset, the suite verifies that the application, migration and provisioning URLs
+target the same host, port and database; that the database name contains `test`
+as a distinct segment; and that the migration connection reached that exact
+database:
 
 ```sh
 npm run test:integration
@@ -84,4 +100,5 @@ npm run test:integration
 
 The suite exercises tenant visibility, transaction-local tenant context,
 cross-tenant write and reference rejection, unit-kind defaults, RLS enforcement,
-runtime-role restrictions and effective-rate overlap protection.
+runtime and provisioner role restrictions, effective-rate overlap protection,
+tenant provisioning, invitation acceptance and session lifecycle.

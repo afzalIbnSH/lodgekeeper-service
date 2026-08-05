@@ -1,6 +1,6 @@
 import 'dotenv/config';
 
-import { databaseEnvironmentFromProcess } from './src/config/environment';
+import { databaseEnvironmentFromProcess } from './src/config/database-environment';
 import { createMikroOrmOptions } from './src/database/mikro-orm.options';
 
 export default createMikroOrmOptions(
