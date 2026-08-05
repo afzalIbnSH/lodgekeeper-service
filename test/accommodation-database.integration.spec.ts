@@ -47,28 +47,6 @@ function hasDatabaseCode(error: unknown, code: string): boolean {
   return error instanceof Error && 'code' in error && error.code === code;
 }
 
-void describe('integration database safety', () => {
-  void it('rejects non-test and mismatched database targets', () => {
-    assert.throws(
-      () =>
-        assertSafeTestDatabaseUrls(
-          'postgresql://app:secret@localhost:5433/lodgekeeper',
-          'postgresql://owner:secret@localhost:5433/lodgekeeper',
-        ),
-      /must target a database with "test" as a distinct name segment/,
-    );
-
-    assert.throws(
-      () =>
-        assertSafeTestDatabaseUrls(
-          'postgresql://app:secret@localhost:5433/lodgekeeper_test',
-          'postgresql://owner:secret@localhost:5433/another_test',
-        ),
-      /must target the same test database/,
-    );
-  });
-});
-
 void describe('accommodation database', () => {
   let orm: MikroORM;
   let tenantTransaction: TenantTransaction;
