@@ -29,13 +29,13 @@ export class Migration20260802174750_tenant_provisioning extends Migration {
     );
 
     this.addSql(
-      `create table "user_invitations" ("id" uuid not null default uuidv7(), "tenant_id" uuid not null, "user_id" uuid not null, "token_hash" varchar(64) not null, "expires_at" timestamptz not null, "accepted_at" timestamptz null, "revoked_at" timestamptz null, "created_at" timestamptz not null default now(), primary key ("id"));`,
+      `create table "user_invitations" ("id" uuid not null default uuidv7(), "tenant_id" uuid not null, "user_id" uuid not null, "token_hash" varchar(64) not null, "expires_at" timestamptz not null, "accepted_at" timestamptz null, "created_at" timestamptz not null default now(), primary key ("id"));`,
     );
     this.addSql(
       `alter table "user_invitations" add constraint "user_invitations_tenant_token_unique" unique ("tenant_id", "token_hash");`,
     );
     this.addSql(
-      `create unique index user_invitations_active_user_unique on user_invitations (tenant_id, user_id) where accepted_at is null and revoked_at is null;`,
+      `create unique index user_invitations_active_user_unique on user_invitations (tenant_id, user_id) where accepted_at is null;`,
     );
 
     this.addSql(
@@ -101,10 +101,6 @@ export class Migration20260802174750_tenant_provisioning extends Migration {
     this.addSql(
       `alter table "user_invitations" add constraint "user_invitations_expiry_valid" check (expires_at > created_at);`,
     );
-    this.addSql(
-      `alter table "user_invitations" add constraint "user_invitations_resolution_valid" check (accepted_at is null or revoked_at is null);`,
-    );
-
     // PostgreSQL-only RLS policies and grants.
     // `users` deliberately has no RLS: login finds the globally unique email
     // before the application knows which tenant context to establish.
@@ -143,7 +139,7 @@ export class Migration20260802174750_tenant_provisioning extends Migration {
         suspended_at,
         updated_at
       ) on users to lodgekeeper_runtime;
-      grant update (accepted_at, revoked_at)
+      grant update (accepted_at)
         on user_invitations to lodgekeeper_runtime;
       grant insert, update, delete on auth_sessions
         to lodgekeeper_runtime;

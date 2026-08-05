@@ -15,10 +15,6 @@ const UserInvitationSchema = defineEntity({
       name: 'user_invitations_expiry_valid',
       expression: 'expires_at > created_at',
     },
-    {
-      name: 'user_invitations_resolution_valid',
-      expression: 'accepted_at is null or revoked_at is null',
-    },
   ],
   properties: {
     id: p.uuid().primary().defaultRaw('uuidv7()'),
@@ -41,11 +37,6 @@ const UserInvitationSchema = defineEntity({
       .fieldName('accepted_at')
       .columnType('timestamptz')
       .nullable(),
-    revokedAt: p
-      .datetime()
-      .fieldName('revoked_at')
-      .columnType('timestamptz')
-      .nullable(),
     createdAt: p
       .datetime()
       .fieldName('created_at')
@@ -60,7 +51,7 @@ const UserInvitationSchema = defineEntity({
     {
       name: 'user_invitations_active_user_unique',
       expression:
-        'create unique index user_invitations_active_user_unique on user_invitations (tenant_id, user_id) where accepted_at is null and revoked_at is null',
+        'create unique index user_invitations_active_user_unique on user_invitations (tenant_id, user_id) where accepted_at is null',
     },
   ],
 });

@@ -59,7 +59,6 @@ export class AuthService {
         UserInvitation,
         {
           acceptedAt: null,
-          revokedAt: null,
           tokenHash,
         },
         {

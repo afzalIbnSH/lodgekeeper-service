@@ -297,47 +297,30 @@
           "unique": true
         },
         {
-          "columnNames": [
-            "tenant_id",
-            "accommodation_unit_type_id",
-            "valid_from"
-          ],
-          "composite": true,
+          "columnNames": [],
+          "composite": false,
           "constraint": false,
           "keyName": "unit_type_rates_current_lookup",
           "primary": false,
           "unique": false,
-          "columns": [
-            {
-              "name": "tenant_id"
-            },
-            {
-              "name": "accommodation_unit_type_id"
-            },
-            {
-              "name": "valid_from",
-              "sort": "DESC"
-            }
-          ]
+          "expression": "create index unit_type_rates_current_lookup on accommodation_unit_type_rates (tenant_id, accommodation_unit_type_id, valid_from desc)"
         }
       ],
       "checks": [
         {
           "name": "unit_type_rates_amount_positive",
           "expression": "amount_minor > 0",
-          "definition": "CHECK ((amount_minor > 0))",
-          "columnName": "amount_minor"
+          "definition": "check (amount_minor > 0)"
         },
         {
           "name": "unit_type_rates_period_valid",
-          "expression": "(valid_to IS NULL) OR (valid_to > valid_from)",
-          "definition": "CHECK (((valid_to IS NULL) OR (valid_to > valid_from)))",
-          "columnName": "valid_from"
+          "expression": "valid_to is null or valid_to > valid_from",
+          "definition": "check (valid_to is null or valid_to > valid_from)"
         },
         {
           "name": "unit_type_rates_periods_do_not_overlap",
-          "expression": "EXCLUDE USING gist (tenant_id WITH =, accommodation_unit_type_id WITH =, daterange(valid_from, valid_to, '[)'::text) WITH &&)",
-          "definition": "EXCLUDE USING gist (tenant_id WITH =, accommodation_unit_type_id WITH =, daterange(valid_from, valid_to, '[)'::text) WITH &&)"
+          "expression": "\n        exclude using gist (\n          tenant_id with =,\n          accommodation_unit_type_id with =,\n          daterange(valid_from, valid_to, '[)') with &&\n        )\n      ",
+          "definition": "check (\n        exclude using gist (\n          tenant_id with =,\n          accommodation_unit_type_id with =,\n          daterange(valid_from, valid_to, '[)') with &&\n        )\n      )"
         }
       ],
       "triggers": [],
@@ -567,17 +550,13 @@
           "unique": true
         },
         {
-          "columnNames": [
-            "tenant_id",
-            "property_id",
-            "lower(btrim(name))"
-          ],
-          "composite": true,
-          "constraint": false,
+          "columnNames": [],
+          "composite": false,
+          "constraint": true,
           "keyName": "unit_types_active_name_unique",
           "primary": false,
           "unique": true,
-          "expression": "CREATE UNIQUE INDEX unit_types_active_name_unique ON public.accommodation_unit_types USING btree (tenant_id, property_id, lower(btrim(name))) WHERE (archived_at IS NULL)"
+          "expression": "create unique index unit_types_active_name_unique on accommodation_unit_types (tenant_id, property_id, lower(btrim(name))) where archived_at is null"
         },
         {
           "columnNames": [
@@ -602,14 +581,12 @@
         {
           "name": "unit_types_max_occupancy_positive",
           "expression": "max_occupancy > 0",
-          "definition": "CHECK ((max_occupancy > 0))",
-          "columnName": "max_occupancy"
+          "definition": "check (max_occupancy > 0)"
         },
         {
           "name": "unit_types_name_not_blank",
-          "expression": "btrim(name) <> ''::text",
-          "definition": "CHECK ((btrim(name) <> ''::text))",
-          "columnName": "name"
+          "expression": "btrim(name) <> ''",
+          "definition": "check (btrim(name) <> '')"
         }
       ],
       "triggers": [
@@ -620,7 +597,8 @@
             "update"
           ],
           "forEach": "row",
-          "body": ""
+          "body": "",
+          "expression": "create trigger accommodation_unit_types_touch_updated_at before update on accommodation_unit_types for each row execute function app.touch_updated_at()"
         }
       ],
       "foreignKeys": {
@@ -821,7 +799,7 @@
           "autoincrement": false,
           "primary": false,
           "nullable": false,
-          "unique": true,
+          "unique": false,
           "length": null,
           "precision": null,
           "scale": null,
@@ -861,37 +839,30 @@
           "unique": true
         },
         {
-          "columnNames": [
-            "tenant_id",
-            "property_id",
-            "lower(btrim(code))"
-          ],
-          "composite": true,
-          "constraint": false,
+          "columnNames": [],
+          "composite": false,
+          "constraint": true,
           "keyName": "units_active_code_unique",
           "primary": false,
           "unique": true,
-          "expression": "CREATE UNIQUE INDEX units_active_code_unique ON public.accommodation_units USING btree (tenant_id, property_id, lower(btrim(code))) WHERE (archived_at IS NULL)"
+          "expression": "create unique index units_active_code_unique on accommodation_units (tenant_id, property_id, lower(btrim(code))) where archived_at is null"
         }
       ],
       "checks": [
         {
           "name": "units_code_not_blank",
-          "expression": "btrim(code) <> ''::text",
-          "definition": "CHECK ((btrim(code) <> ''::text))",
-          "columnName": "code"
+          "expression": "btrim(code) <> ''",
+          "definition": "check (btrim(code) <> '')"
         },
         {
           "name": "units_display_name_not_blank",
-          "expression": "(display_name IS NULL) OR (btrim(display_name) <> ''::text)",
-          "definition": "CHECK (((display_name IS NULL) OR (btrim(display_name) <> ''::text)))",
-          "columnName": "display_name"
+          "expression": "display_name is null or btrim(display_name) <> ''",
+          "definition": "check (display_name is null or btrim(display_name) <> '')"
         },
         {
           "name": "units_floor_label_not_blank",
-          "expression": "(floor_label IS NULL) OR (btrim(floor_label) <> ''::text)",
-          "definition": "CHECK (((floor_label IS NULL) OR (btrim(floor_label) <> ''::text)))",
-          "columnName": "floor_label"
+          "expression": "floor_label is null or btrim(floor_label) <> ''",
+          "definition": "check (floor_label is null or btrim(floor_label) <> '')"
         }
       ],
       "triggers": [
@@ -902,7 +873,8 @@
             "update"
           ],
           "forEach": "row",
-          "body": ""
+          "body": "",
+          "expression": "create trigger accommodation_units_touch_updated_at before update on accommodation_units for each row execute function app.touch_updated_at()"
         }
       ],
       "foreignKeys": {
@@ -1051,16 +1023,13 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "tenant_id",
-            "lower(btrim(name))"
-          ],
-          "composite": true,
-          "constraint": false,
+          "columnNames": [],
+          "composite": false,
+          "constraint": true,
           "keyName": "amenities_active_name_unique",
           "primary": false,
           "unique": true,
-          "expression": "CREATE UNIQUE INDEX amenities_active_name_unique ON public.amenities USING btree (tenant_id, lower(btrim(name))) WHERE (archived_at IS NULL)"
+          "expression": "create unique index amenities_active_name_unique on amenities (tenant_id, lower(btrim(name))) where archived_at is null"
         },
         {
           "columnNames": [
@@ -1087,9 +1056,8 @@
       "checks": [
         {
           "name": "amenities_name_not_blank",
-          "expression": "btrim(name) <> ''::text",
-          "definition": "CHECK ((btrim(name) <> ''::text))",
-          "columnName": "name"
+          "expression": "btrim(name) <> ''",
+          "definition": "check (btrim(name) <> '')"
         }
       ],
       "triggers": [
@@ -1100,7 +1068,8 @@
             "update"
           ],
           "forEach": "row",
-          "body": ""
+          "body": "",
+          "expression": "create trigger amenities_touch_updated_at before update on amenities for each row execute function app.touch_updated_at()"
         }
       ],
       "foreignKeys": {
@@ -1299,14 +1268,12 @@
         {
           "name": "auth_sessions_expiry_valid",
           "expression": "expires_at > created_at",
-          "definition": "CHECK ((expires_at > created_at))",
-          "columnName": "created_at"
+          "definition": "check (expires_at > created_at)"
         },
         {
           "name": "auth_sessions_token_hash_format",
-          "expression": "token_hash ~ '^[0-9a-f]{64}$'::text",
-          "definition": "CHECK (((token_hash)::text ~ '^[0-9a-f]{64}$'::text))",
-          "columnName": "token_hash"
+          "expression": "token_hash ~ '^[0-9a-f]{64}$'",
+          "definition": "check (token_hash ~ '^[0-9a-f]{64}$')"
         }
       ],
       "triggers": [],
@@ -1471,16 +1438,13 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "tenant_id",
-            "lower(btrim(name))"
-          ],
-          "composite": true,
-          "constraint": false,
+          "columnNames": [],
+          "composite": false,
+          "constraint": true,
           "keyName": "properties_active_name_unique",
           "primary": false,
           "unique": true,
-          "expression": "CREATE UNIQUE INDEX properties_active_name_unique ON public.properties USING btree (tenant_id, lower(btrim(name))) WHERE (archived_at IS NULL)"
+          "expression": "create unique index properties_active_name_unique on properties (tenant_id, lower(btrim(name))) where archived_at is null"
         },
         {
           "columnNames": [
@@ -1507,21 +1471,18 @@
       "checks": [
         {
           "name": "properties_currency_code_format",
-          "expression": "currency_code ~ '^[A-Z]{3}$'::text",
-          "definition": "CHECK (((currency_code)::text ~ '^[A-Z]{3}$'::text))",
-          "columnName": "currency_code"
+          "expression": "currency_code ~ '^[A-Z]{3}$'",
+          "definition": "check (currency_code ~ '^[A-Z]{3}$')"
         },
         {
           "name": "properties_name_not_blank",
-          "expression": "btrim(name) <> ''::text",
-          "definition": "CHECK ((btrim(name) <> ''::text))",
-          "columnName": "name"
+          "expression": "btrim(name) <> ''",
+          "definition": "check (btrim(name) <> '')"
         },
         {
           "name": "properties_timezone_not_blank",
-          "expression": "btrim(timezone) <> ''::text",
-          "definition": "CHECK ((btrim(timezone) <> ''::text))",
-          "columnName": "timezone"
+          "expression": "btrim(timezone) <> ''",
+          "definition": "check (btrim(timezone) <> '')"
         }
       ],
       "triggers": [
@@ -1532,7 +1493,8 @@
             "update"
           ],
           "forEach": "row",
-          "body": ""
+          "body": "",
+          "expression": "create trigger properties_touch_updated_at before update on properties for each row execute function app.touch_updated_at()"
         }
       ],
       "foreignKeys": {
@@ -1765,17 +1727,13 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "tenant_id",
-            "property_id",
-            "lower(btrim(name))"
-          ],
-          "composite": true,
-          "constraint": false,
+          "columnNames": [],
+          "composite": false,
+          "constraint": true,
           "keyName": "rental_policies_active_name_unique",
           "primary": false,
           "unique": true,
-          "expression": "CREATE UNIQUE INDEX rental_policies_active_name_unique ON public.rental_policies USING btree (tenant_id, property_id, lower(btrim(name))) WHERE (archived_at IS NULL)"
+          "expression": "create unique index rental_policies_active_name_unique on rental_policies (tenant_id, property_id, lower(btrim(name))) where archived_at is null"
         },
         {
           "columnNames": [
@@ -1804,8 +1762,7 @@
         {
           "name": "rental_policies_grace_non_negative",
           "expression": "grace_period_minutes >= 0",
-          "definition": "CHECK ((grace_period_minutes >= 0))",
-          "columnName": "grace_period_minutes"
+          "definition": "check (grace_period_minutes >= 0)"
         },
         {
           "name": "rental_policies_kind_check",
@@ -1815,15 +1772,13 @@
         },
         {
           "name": "rental_policies_name_not_blank",
-          "expression": "btrim(name) <> ''::text",
-          "definition": "CHECK ((btrim(name) <> ''::text))",
-          "columnName": "name"
+          "expression": "btrim(name) <> ''",
+          "definition": "check (btrim(name) <> '')"
         },
         {
           "name": "rental_policies_shape_valid",
-          "expression": "((kind = 'rolling_duration'::text) AND (duration_minutes > 0) AND (check_in_time IS NULL) AND (check_out_time IS NULL)) OR ((kind = 'calendar_night'::text) AND (duration_minutes IS NULL) AND (check_in_time IS NOT NULL) AND (check_out_time IS NOT NULL))",
-          "definition": "CHECK ((((kind = 'rolling_duration'::text) AND (duration_minutes > 0) AND (check_in_time IS NULL) AND (check_out_time IS NULL)) OR ((kind = 'calendar_night'::text) AND (duration_minutes IS NULL) AND (check_in_time IS NOT NULL) AND (check_out_time IS NOT NULL))))",
-          "columnName": "check_in_time"
+          "expression": "\n        (\n          kind = 'rolling_duration'\n          and duration_minutes > 0\n          and check_in_time is null\n          and check_out_time is null\n        )\n        or\n        (\n          kind = 'calendar_night'\n          and duration_minutes is null\n          and check_in_time is not null\n          and check_out_time is not null\n        )\n      ",
+          "definition": "check (\n        (\n          kind = 'rolling_duration'\n          and duration_minutes > 0\n          and check_in_time is null\n          and check_out_time is null\n        )\n        or\n        (\n          kind = 'calendar_night'\n          and duration_minutes is null\n          and check_in_time is not null\n          and check_out_time is not null\n        )\n      )"
         }
       ],
       "triggers": [
@@ -1834,7 +1789,8 @@
             "update"
           ],
           "forEach": "row",
-          "body": ""
+          "body": "",
+          "expression": "create trigger rental_policies_touch_updated_at before update on rental_policies for each row execute function app.touch_updated_at()"
         }
       ],
       "foreignKeys": {
@@ -1960,9 +1916,8 @@
       "checks": [
         {
           "name": "tenants_name_not_blank",
-          "expression": "btrim(name) <> ''::text",
-          "definition": "CHECK ((btrim(name) <> ''::text))",
-          "columnName": "name"
+          "expression": "btrim(name) <> ''",
+          "definition": "check (btrim(name) <> '')"
         }
       ],
       "triggers": [
@@ -1973,7 +1928,8 @@
             "update"
           ],
           "forEach": "row",
-          "body": ""
+          "body": "",
+          "expression": "create trigger tenants_touch_updated_at before update on tenants for each row execute function app.touch_updated_at()"
         }
       ],
       "foreignKeys": {},
@@ -2051,23 +2007,6 @@
           "enumItems": [],
           "mappedType": "uuid"
         },
-        "revoked_at": {
-          "name": "revoked_at",
-          "type": "timestamptz(6)",
-          "unsigned": false,
-          "autoincrement": false,
-          "primary": false,
-          "nullable": true,
-          "unique": false,
-          "length": 6,
-          "precision": null,
-          "scale": null,
-          "default": null,
-          "comment": null,
-          "collation": null,
-          "enumItems": [],
-          "mappedType": "datetime"
-        },
         "tenant_id": {
           "name": "tenant_id",
           "type": "uuid",
@@ -2122,16 +2061,13 @@
       },
       "indexes": [
         {
-          "columnNames": [
-            "tenant_id",
-            "user_id"
-          ],
-          "composite": true,
-          "constraint": false,
+          "columnNames": [],
+          "composite": false,
+          "constraint": true,
           "keyName": "user_invitations_active_user_unique",
           "primary": false,
           "unique": true,
-          "where": "(accepted_at IS NULL) AND (revoked_at IS NULL)"
+          "expression": "create unique index user_invitations_active_user_unique on user_invitations (tenant_id, user_id) where accepted_at is null"
         },
         {
           "columnNames": [
@@ -2159,20 +2095,12 @@
         {
           "name": "user_invitations_expiry_valid",
           "expression": "expires_at > created_at",
-          "definition": "CHECK ((expires_at > created_at))",
-          "columnName": "created_at"
-        },
-        {
-          "name": "user_invitations_resolution_valid",
-          "expression": "(accepted_at IS NULL) OR (revoked_at IS NULL)",
-          "definition": "CHECK (((accepted_at IS NULL) OR (revoked_at IS NULL)))",
-          "columnName": "accepted_at"
+          "definition": "check (expires_at > created_at)"
         },
         {
           "name": "user_invitations_token_hash_format",
-          "expression": "token_hash ~ '^[0-9a-f]{64}$'::text",
-          "definition": "CHECK (((token_hash)::text ~ '^[0-9a-f]{64}$'::text))",
-          "columnName": "token_hash"
+          "expression": "token_hash ~ '^[0-9a-f]{64}$'",
+          "definition": "check (token_hash ~ '^[0-9a-f]{64}$')"
         }
       ],
       "triggers": [],
@@ -2445,15 +2373,13 @@
       "checks": [
         {
           "name": "users_display_name_not_blank",
-          "expression": "(display_name IS NULL) OR (btrim(display_name) <> ''::text)",
-          "definition": "CHECK (((display_name IS NULL) OR (btrim(display_name) <> ''::text)))",
-          "columnName": "display_name"
+          "expression": "display_name is null or btrim(display_name) <> ''",
+          "definition": "check (display_name is null or btrim(display_name) <> '')"
         },
         {
           "name": "users_email_normalized",
-          "expression": "(email = lower(btrim(email))) AND (email ~ '^[^@[:space:]]+@[^@[:space:]]+$'::text)",
-          "definition": "CHECK (((email = lower(btrim(email))) AND (email ~ '^[^@[:space:]]+@[^@[:space:]]+$'::text)))",
-          "columnName": "email"
+          "expression": "email = lower(btrim(email)) and email ~ '^[^@[:space:]]+@[^@[:space:]]+$'",
+          "definition": "check (email = lower(btrim(email)) and email ~ '^[^@[:space:]]+@[^@[:space:]]+$')"
         },
         {
           "name": "users_role_check",
@@ -2469,9 +2395,8 @@
         },
         {
           "name": "users_status_shape_valid",
-          "expression": "((status = 'invited'::text) AND (password_hash IS NULL) AND (activated_at IS NULL) AND (suspended_at IS NULL)) OR ((status = 'active'::text) AND (display_name IS NOT NULL) AND (password_hash IS NOT NULL) AND (activated_at IS NOT NULL) AND (suspended_at IS NULL)) OR ((status = 'suspended'::text) AND (display_name IS NOT NULL) AND (password_hash IS NOT NULL) AND (activated_at IS NOT NULL) AND (suspended_at IS NOT NULL))",
-          "definition": "CHECK ((((status = 'invited'::text) AND (password_hash IS NULL) AND (activated_at IS NULL) AND (suspended_at IS NULL)) OR ((status = 'active'::text) AND (display_name IS NOT NULL) AND (password_hash IS NOT NULL) AND (activated_at IS NOT NULL) AND (suspended_at IS NULL)) OR ((status = 'suspended'::text) AND (display_name IS NOT NULL) AND (password_hash IS NOT NULL) AND (activated_at IS NOT NULL) AND (suspended_at IS NOT NULL))))",
-          "columnName": "activated_at"
+          "expression": "\n        (\n          status = 'invited'\n          and password_hash is null\n          and activated_at is null\n          and suspended_at is null\n        )\n        or\n        (\n          status = 'active'\n          and display_name is not null\n          and password_hash is not null\n          and activated_at is not null\n          and suspended_at is null\n        )\n        or\n        (\n          status = 'suspended'\n          and display_name is not null\n          and password_hash is not null\n          and activated_at is not null\n          and suspended_at is not null\n        )\n      ",
+          "definition": "check (\n        (\n          status = 'invited'\n          and password_hash is null\n          and activated_at is null\n          and suspended_at is null\n        )\n        or\n        (\n          status = 'active'\n          and display_name is not null\n          and password_hash is not null\n          and activated_at is not null\n          and suspended_at is null\n        )\n        or\n        (\n          status = 'suspended'\n          and display_name is not null\n          and password_hash is not null\n          and activated_at is not null\n          and suspended_at is not null\n        )\n      )"
         }
       ],
       "triggers": [
@@ -2482,7 +2407,8 @@
             "update"
           ],
           "forEach": "row",
-          "body": ""
+          "body": "",
+          "expression": "create trigger users_touch_updated_at before update on users for each row execute function app.touch_updated_at()"
         }
       ],
       "foreignKeys": {
