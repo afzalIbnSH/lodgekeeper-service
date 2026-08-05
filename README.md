@@ -47,7 +47,9 @@ npm run start:dev
 | `npm run start:prod`          | Run the compiled application         |
 | `npm run lint`                | Run ESLint                           |
 | `npm run typecheck:tools`     | Type-check development tooling       |
-| `npm test`                    | Run the integration test suite       |
+| `npm test`                    | Run all tests                        |
+| `npm run test:unit`           | Run the unit test suite              |
+| `npm run test:integration`    | Run the integration test suite       |
 | `npm run db:create-migration` | Generate a migration from metadata   |
 | `npm run db:migrate`          | Apply pending migrations             |
 | `npm run db:migrate:down`     | Revert the most recent migration     |

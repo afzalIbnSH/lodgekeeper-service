@@ -8,7 +8,7 @@ import { NestFactory } from '@nestjs/core';
 import dotenv from 'dotenv';
 import type { INestApplication, INestApplicationContext } from '@nestjs/common';
 
-import { DatabaseEnvironment } from '../src/config/environment';
+import { DatabaseEnvironment } from '../src/config/database-environment';
 import { createMikroOrmOptions } from '../src/database/mikro-orm.options';
 import { ProvisioningEnvironment } from '../src/provisioning/provisioning.config';
 import { ProvisioningModule } from '../src/provisioning/provisioning.module';

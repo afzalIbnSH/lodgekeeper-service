@@ -3,7 +3,7 @@ import { Migrator } from '@mikro-orm/migrations';
 import { defineConfig, PostgreSqlDriver } from '@mikro-orm/postgresql';
 
 import { accommodationEntities } from '../accommodation/entities';
-import { DatabaseEnvironment } from '../config/environment';
+import { DatabaseEnvironment } from '../config/database-environment';
 import { identityEntities } from '../identity/entities';
 
 export function createMikroOrmOptions(environment: DatabaseEnvironment) {

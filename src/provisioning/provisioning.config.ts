@@ -1,7 +1,13 @@
 import {
   DatabaseEnvironment,
   databaseEnvironmentFromProcess,
-} from '../config/environment';
+} from '../config/database-environment';
+import {
+  readBoolean,
+  readPositiveInteger,
+  readRequiredString,
+  readString,
+} from '../config/environment-value';
 
 export type InvitationDeliveryKind = 'console' | 'smtp';
 
@@ -18,57 +24,10 @@ export interface ProvisioningEnvironment {
   smtpUser?: string;
 }
 
-function required(source: NodeJS.ProcessEnv, key: string): string {
-  const value = source[key]?.trim();
-
-  if (!value) {
-    throw new Error(`${key} must be a non-empty string`);
-  }
-
-  return value;
-}
-
-function positiveInteger(
-  source: NodeJS.ProcessEnv,
-  key: string,
-  fallback: number,
-): number {
-  const raw = source[key];
-  const value = raw === undefined ? fallback : Number(raw);
-
-  if (!Number.isSafeInteger(value) || value <= 0) {
-    throw new Error(`${key} must be a positive integer`);
-  }
-
-  return value;
-}
-
-function boolean(
-  source: NodeJS.ProcessEnv,
-  key: string,
-  fallback: boolean,
-): boolean {
-  const raw = source[key];
-
-  if (raw === undefined) {
-    return fallback;
-  }
-
-  if (raw === 'true') {
-    return true;
-  }
-
-  if (raw === 'false') {
-    return false;
-  }
-
-  throw new Error(`${key} must be either true or false`);
-}
-
 export function provisioningEnvironmentFromProcess(
   source: NodeJS.ProcessEnv,
 ): ProvisioningEnvironment {
-  const appPublicUrl = required(source, 'APP_PUBLIC_URL');
+  const appPublicUrl = readRequiredString(source, 'APP_PUBLIC_URL');
   let parsedPublicUrl: URL;
 
   try {
@@ -84,7 +43,7 @@ export function provisioningEnvironmentFromProcess(
     throw new Error('APP_PUBLIC_URL must use HTTP or HTTPS');
   }
 
-  const deliveryValue = source.INVITATION_DELIVERY ?? 'console';
+  const deliveryValue = readString(source, 'INVITATION_DELIVERY', 'console');
 
   if (deliveryValue !== 'console' && deliveryValue !== 'smtp') {
     throw new Error('INVITATION_DELIVERY must be either console or smtp');
@@ -97,14 +56,14 @@ export function provisioningEnvironmentFromProcess(
       'PROVISIONING_DATABASE_URL',
     ),
     delivery: deliveryValue,
-    invitationTtlHours: positiveInteger(source, 'INVITATION_TTL_HOURS', 48),
-    smtpPort: positiveInteger(source, 'SMTP_PORT', 587),
-    smtpSecure: boolean(source, 'SMTP_SECURE', false),
+    invitationTtlHours: readPositiveInteger(source, 'INVITATION_TTL_HOURS', 48),
+    smtpPort: readPositiveInteger(source, 'SMTP_PORT', 587),
+    smtpSecure: readBoolean(source, 'SMTP_SECURE', false),
   };
 
   if (deliveryValue === 'smtp') {
-    environment.smtpFrom = required(source, 'SMTP_FROM');
-    environment.smtpHost = required(source, 'SMTP_HOST');
+    environment.smtpFrom = readRequiredString(source, 'SMTP_FROM');
+    environment.smtpHost = readRequiredString(source, 'SMTP_HOST');
 
     const smtpUser = source.SMTP_USER?.trim();
     const smtpPassword = source.SMTP_PASSWORD;

@@ -20,9 +20,10 @@
     "db:migrate": "mikro-orm migration:up",
     "db:migrate:down": "mikro-orm migration:down",
     "provision:tenant": "tsx src/provisioning/provision-tenant.ts",
-    "test": "npm run test:integration",
+    "test": "npm run test:unit && npm run test:integration",
+    "test:unit": "tsx --test test/*.unit.spec.ts",
     "test:integration": "tsx --test --test-concurrency=1 test/*.integration.spec.ts",
-    "test:cov": "node --import tsx --experimental-test-coverage --test --test-concurrency=1 test/*.integration.spec.ts"
+    "test:cov": "node --import tsx --experimental-test-coverage --test --test-concurrency=1 test/*.unit.spec.ts test/*.integration.spec.ts"
   },
   "mikro-orm": {
     "configPaths": [
