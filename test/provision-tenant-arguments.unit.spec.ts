@@ -36,7 +36,7 @@ void describe('tenant provisioning arguments', () => {
     });
   });
 
-  void it('rejects unknown flags and missing values with usage guidance', () => {
+  void it('identifies an unknown argument', () => {
     assert.throws(
       () =>
         parseProvisionTenantArguments([
@@ -44,18 +44,28 @@ void describe('tenant provisioning arguments', () => {
           'value',
           ...VALID_ARGUMENTS,
         ]),
-      /Usage: npm run provision:tenant/,
-    );
-    assert.throws(
-      () => parseProvisionTenantArguments(VALID_ARGUMENTS.slice(0, -1)),
-      /Usage: npm run provision:tenant/,
+      /Unknown provisioning argument: --unknown/,
     );
   });
 
-  void it('requires every argument to contain a non-blank value', () => {
+  void it('identifies an argument whose value is missing', () => {
+    assert.throws(
+      () => parseProvisionTenantArguments(VALID_ARGUMENTS.slice(0, -1)),
+      /--admin-email requires a value/,
+    );
+  });
+
+  void it('identifies an argument whose value is blank', () => {
     assert.throws(
       () => parseProvisionTenantArguments(withArgument('--property-name', ' ')),
-      /Every provisioning argument is required/,
+      /--property-name must not be blank/,
+    );
+  });
+
+  void it('lists required arguments that were omitted', () => {
+    assert.throws(
+      () => parseProvisionTenantArguments(VALID_ARGUMENTS.slice(0, -2)),
+      /Missing required argument: --admin-email/,
     );
   });
 
