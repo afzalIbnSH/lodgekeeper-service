@@ -1,15 +1,19 @@
 import type { ProvisionTenantInput } from './provisioning.service';
 
-const ARGUMENTS = new Map<string, keyof ProvisionTenantInput>([
-  ['--admin-email', 'adminEmail'],
-  ['--currency-code', 'currencyCode'],
-  ['--property-name', 'propertyName'],
-  ['--tenant-name', 'tenantName'],
-  ['--timezone', 'timezone'],
-]);
+const ARGUMENTS: ReadonlyArray<{
+  flag: string;
+  property: keyof ProvisionTenantInput;
+}> = [
+  { flag: '--admin-email', property: 'adminEmail' },
+  { flag: '--currency-code', property: 'currencyCode' },
+  { flag: '--property-name', property: 'propertyName' },
+  { flag: '--tenant-name', property: 'tenantName' },
+  { flag: '--timezone', property: 'timezone' },
+];
 
-const USAGE =
-  'Usage: npm run provision:tenant -- --tenant-name NAME --property-name NAME --currency-code INR --timezone Asia/Kolkata --admin-email EMAIL';
+const ARGUMENT_BY_FLAG = new Map(
+  ARGUMENTS.map(({ flag, property }) => [flag, property]),
+);
 
 export function parseProvisionTenantArguments(
   values: string[],
@@ -19,25 +23,31 @@ export function parseProvisionTenantArguments(
   for (let index = 0; index < values.length; index += 2) {
     const flag = values[index];
     const value = values[index + 1];
-    const property = flag ? ARGUMENTS.get(flag) : undefined;
+    const property = flag ? ARGUMENT_BY_FLAG.get(flag) : undefined;
 
-    if (!property || !value || value.startsWith('--')) {
-      throw new Error(USAGE);
+    if (!property) {
+      throw new Error(`Unknown provisioning argument: ${flag || '(blank)'}`);
+    }
+
+    if (value === undefined || value.startsWith('--')) {
+      throw new Error(`${flag} requires a value`);
+    }
+
+    if (value.trim() === '') {
+      throw new Error(`${flag} must not be blank`);
     }
 
     parsed[property] = value;
   }
 
-  const required = [
-    'adminEmail',
-    'currencyCode',
-    'propertyName',
-    'tenantName',
-    'timezone',
-  ] as const;
+  const missing = ARGUMENTS.filter(
+    ({ property }) => parsed[property] === undefined,
+  ).map(({ flag }) => flag);
 
-  if (required.some((property) => !parsed[property]?.trim())) {
-    throw new Error('Every provisioning argument is required');
+  if (missing.length > 0) {
+    const label = missing.length === 1 ? 'argument' : 'arguments';
+
+    throw new Error(`Missing required ${label}: ${missing.join(', ')}`);
   }
 
   if (!/^[A-Z]{3}$/i.test(parsed.currencyCode!)) {
