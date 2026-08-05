@@ -48,6 +48,8 @@ const UserInvitationSchema = defineEntity({
       name: 'user_invitations_tenant_token_unique',
       properties: ['tenant', 'tokenHash'],
     },
+    // TODO(invitation-reissue): Add a revoke/reissue workflow for expired or
+    // lost invitations before supporting replacement invitations.
     {
       name: 'user_invitations_active_user_unique',
       expression:

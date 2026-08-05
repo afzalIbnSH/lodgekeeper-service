@@ -235,6 +235,26 @@ void describe('tenant provisioning and account activation', () => {
     assert.equal(rejectedLogin.status, 401);
     assert.equal(rejectedLogin.headers.get('set-cookie'), null);
 
+    const malformedLogin = await fetch(`${baseUrl}/auth/login`, {
+      body: JSON.stringify({
+        email: {},
+        password,
+      }),
+      headers: { 'content-type': 'application/json' },
+      method: 'POST',
+    });
+    assert.equal(malformedLogin.status, 400);
+
+    const oversizedLogin = await fetch(`${baseUrl}/auth/login`, {
+      body: JSON.stringify({
+        email,
+        password: 'x'.repeat(129),
+      }),
+      headers: { 'content-type': 'application/json' },
+      method: 'POST',
+    });
+    assert.equal(oversizedLogin.status, 400);
+
     const login = await fetch(`${baseUrl}/auth/login`, {
       body: JSON.stringify({
         email,
@@ -299,5 +319,70 @@ void describe('tenant provisioning and account activation', () => {
         table_name: 'users',
       },
     ]);
+  });
+
+  void it('revokes provisioner access when the migration is reverted', async () => {
+    const migrationOptions = createMikroOrmOptions(
+      testDatabaseEnvironment(TEST_MIGRATION_DATABASE_URL),
+    );
+
+    migrationOptions.migrations = {
+      ...migrationOptions.migrations,
+      snapshot: false,
+    };
+
+    const migrationOrm = await MikroORM.init(migrationOptions);
+
+    try {
+      await migrationOrm.migrator.down();
+
+      const [privileges] = await migrationOrm.em.fork().execute<
+        Array<{
+          app_schema_usage: boolean;
+          current_tenant_execute: boolean;
+          properties_insert: boolean;
+          tenants_select: boolean;
+          touch_updated_at_execute: boolean;
+        }>
+      >(`
+        select
+          has_schema_privilege(
+            'lodgekeeper_provisioner',
+            'app',
+            'usage'
+          ) as app_schema_usage,
+          has_function_privilege(
+            'lodgekeeper_provisioner',
+            'app.current_tenant_id()',
+            'execute'
+          ) as current_tenant_execute,
+          has_table_privilege(
+            'lodgekeeper_provisioner',
+            'properties',
+            'insert'
+          ) as properties_insert,
+          has_table_privilege(
+            'lodgekeeper_provisioner',
+            'tenants',
+            'select'
+          ) as tenants_select,
+          has_function_privilege(
+            'lodgekeeper_provisioner',
+            'app.touch_updated_at()',
+            'execute'
+          ) as touch_updated_at_execute
+      `);
+
+      assert.deepEqual(privileges, {
+        app_schema_usage: false,
+        current_tenant_execute: false,
+        properties_insert: false,
+        tenants_select: false,
+        touch_updated_at_execute: false,
+      });
+    } finally {
+      await migrationOrm.migrator.up();
+      await migrationOrm.close(true);
+    }
   });
 });

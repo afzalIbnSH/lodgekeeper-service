@@ -147,6 +147,21 @@ export class Migration20260802174750_tenant_provisioning extends Migration {
   }
 
   override down(): void | Promise<void> {
+    this.addSql(`
+      revoke select, insert
+        on tenants,
+           properties,
+           users,
+           user_invitations
+        from lodgekeeper_provisioner;
+      revoke execute on function app.current_tenant_id()
+        from lodgekeeper_provisioner;
+      revoke execute on function app.touch_updated_at()
+        from lodgekeeper_provisioner;
+      revoke usage on schema public, app
+        from lodgekeeper_provisioner;
+    `);
+
     this.addSql('drop table if exists auth_sessions;');
     this.addSql('drop table if exists user_invitations;');
     this.addSql('drop table if exists users;');

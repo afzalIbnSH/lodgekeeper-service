@@ -50,6 +50,8 @@ export class AuthService {
       throw new BadRequestException('displayName must not be blank');
     }
 
+    // TODO(production-hardening): Rate-limit all public password operations and
+    // validate this invitation before starting its scrypt work.
     const passwordHash = await this.passwordHasher.hash(input.password);
     const tokenHash = hashOpaqueToken(input.token);
     const now = new Date();
